@@ -113,15 +113,15 @@ pub async fn get_user_data(command_interaction: &mut ApplicationCommandInteracti
 
                 let type_of_skill: String;
                 if ability.id.contains("basicskill") {
-                    type_of_skill = String::from("BASIC: ");
+                    type_of_skill = String::from("BASIC ");
                 } else if ability.id.contains("uniqueskill") {
-                    type_of_skill = String::from("UNIQUE: ");
+                    type_of_skill = String::from("UNIQUE ");
                 } else if ability.id.contains("specialskill") {
-                    type_of_skill = String::from("SPECIAL: ");
+                    type_of_skill = String::from("SPECIAL ");
                 } else if ability.id.contains("leaderskill") {
-                    type_of_skill = String::from("LEADER: ");
+                    type_of_skill = String::from("LEADER:");
                 } else {
-                    type_of_skill = String::from("UNKNOWN: ");
+                    type_of_skill = String::from("UNKNOWN ");
                 }
 
                 abilities.push(schema::Ability {
