@@ -1,36 +1,9 @@
 use crate::commands::schema;
-use once_cell::sync::Lazy;
-use reqwest::header::{ACCEPT, CONTENT_TYPE, HeaderMap, HeaderValue, USER_AGENT};
 use serenity::builder::CreateApplicationCommand;
 use serenity::model::prelude::{
     command::CommandOptionType,
     interaction::application_command::{ApplicationCommandInteraction, CommandDataOptionValue},
 };
-use tokio::sync::Mutex;
-
-static CLIENT: Lazy<Mutex<reqwest::Client>> = Lazy::new(|| {
-    Mutex::new(
-        reqwest::Client::builder()
-            .http2_prior_knowledge()
-            .cookie_store(true)
-            .build()
-            .unwrap(),
-    )
-});
-
-static HEADERS: Lazy<std::sync::Mutex<HeaderMap>> =
-    Lazy::new(|| std::sync::Mutex::new(HeaderMap::new()));
-
-trait WithLock<T> {
-    fn with_lock<R, F: FnOnce(&mut T) -> R>(&self, f: F) -> R;
-}
-
-impl<T> WithLock<T> for std::sync::Mutex<T> {
-    fn with_lock<R, F: FnOnce(&mut T) -> R>(&self, f: F) -> R {
-        let mut guard = self.lock().unwrap();
-        f(&mut guard)
-    }
-}
 
 pub async fn get_user_data(command_interaction: &mut ApplicationCommandInteraction) -> String {
     // Get list of options from command interaction context
@@ -66,12 +39,15 @@ pub async fn get_user_data(command_interaction: &mut ApplicationCommandInteracti
         return format!("{:?} is not a valid string", character);
     }
 
-    println!("Ally code: {}", ally_code_val);
-
-    let response = CLIENT
+    let headers = crate::commands::reqwest_api::SWGOHGG_HEADERS
+        .lock()
+        .unwrap()
+        .clone();
+    let response = crate::commands::reqwest_api::SWGOHGG_CLIENT
         .lock()
         .await
         .get(format!("https://swgoh.gg/api/player/{}/", ally_code_val))
+        .headers(headers)
         .version(reqwest::Version::HTTP_2)
         .send()
         .await
@@ -128,14 +104,17 @@ pub async fn get_user_data(command_interaction: &mut ApplicationCommandInteracti
                     name: format!("`{:9}{:30}`", type_of_skill, ability.name),
                     level: ability.ability_tier,
                     progress: temp,
-                    max_ab_level: ability.tier_max
+                    max_ab_level: ability.tier_max,
                 });
             }
 
             information = format!("Name: {}\n", unit.data.name);
             information = format!("{information}Unit Level: `{}`\n", unit.data.level);
             information = format!("{information}Gear Level: `{}`\n", unit.data.gear_level);
-            information = format!("{information}Relic Level: `{}`\n", unit.data.relic_tier.unwrap_or(0));
+            information = format!(
+                "{information}Relic Level: `{}`\n",
+                unit.data.relic_tier.unwrap_or(0)
+            );
             information = format!("{information}Power: `{}`\n", unit.data.power);
             information = format!("{information}Rarity: `{}`\n", unit.data.rarity);
             information = format!("{information}Unit Speed: `{}`\n", unit.data.stats.n5);
@@ -146,7 +125,10 @@ pub async fn get_user_data(command_interaction: &mut ApplicationCommandInteracti
             );
 
             for ability in abilities {
-                information = format!("{information}{}: {}  -  `{}/{}`\n", ability.name, ability.progress, ability.level, ability.max_ab_level);
+                information = format!(
+                    "{information}{}: {}  -  `{}/{}`\n",
+                    ability.name, ability.progress, ability.level, ability.max_ab_level
+                );
             }
         }
     }
@@ -172,12 +154,4 @@ pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicatio
                 .kind(CommandOptionType::String)
                 .required(true)
         })
-}
-
-pub fn init_headers() {
-    HEADERS.with_lock(|gaurd| {
-        gaurd.insert(USER_AGENT, HeaderValue::from_static("rust_app/1.0.0"));
-        gaurd.insert(ACCEPT, HeaderValue::from_static("application/json"));
-        gaurd.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-    });
 }
