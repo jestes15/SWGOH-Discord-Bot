@@ -101,7 +101,7 @@ pub async fn get_user_data(command_interaction: &mut ApplicationCommandInteracti
                 }
 
                 abilities.push(schema::Ability {
-                    name: format!("`{:9}{:30}`", type_of_skill, ability.name),
+                    name: format!("`{:9}{:40}`", type_of_skill, ability.name),
                     level: ability.ability_tier,
                     progress: temp,
                     max_ab_level: ability.tier_max,
