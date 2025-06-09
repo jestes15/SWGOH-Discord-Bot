@@ -1,2 +1,2 @@
-pub mod raw_api_output;
+pub mod get_user_data;
 pub mod reqwest_api;

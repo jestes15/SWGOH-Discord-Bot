@@ -22,7 +22,7 @@ impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(mut command) = interaction {
             let content = match command.data.name.as_str() {
-                "get_user_data" => commands::raw_api_output::get_user_data(&mut command).await,
+                "get_user_data" => commands::get_user_data::get_user_data(&mut command).await,
                 _ => not_impl().await,
             };
 
@@ -72,7 +72,7 @@ impl EventHandler for Handler {
 
         let _ = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
             commands
-                .create_application_command(|command| commands::raw_api_output::register(command))
+                .create_application_command(|command| commands::get_user_data::register(command))
         })
         .await;
     }
