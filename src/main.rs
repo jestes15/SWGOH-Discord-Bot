@@ -80,9 +80,6 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
-    // Configure the client with your Discord bot token in the environment.
-    commands::reqwest_api::init_headers();
-
     dotenv().ok();
     let discord_token = std::env::var("DISCORD_TOKEN").expect("DISCORD_TOKEN must be set.");
 

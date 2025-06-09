@@ -1,4 +1,4 @@
-use crate::commands::schema;
+use crate::commands::reqwest_api;
 use serenity::builder::CreateApplicationCommand;
 use serenity::model::prelude::{
     command::CommandOptionType,
@@ -39,28 +39,14 @@ pub async fn get_user_data(command_interaction: &mut ApplicationCommandInteracti
         return format!("{:?} is not a valid string", character);
     }
 
-    let headers = crate::commands::reqwest_api::SWGOHGG_HEADERS
-        .lock()
-        .unwrap()
-        .clone();
-    let response = crate::commands::reqwest_api::SWGOHGG_CLIENT
-        .lock()
-        .await
-        .get(format!("https://swgoh.gg/api/player/{}/", ally_code_val))
-        .headers(headers)
-        .version(reqwest::Version::HTTP_2)
-        .send()
-        .await
-        .unwrap();
-
-    let data = response.json::<schema::Root>().await.unwrap();
+    let data = crate::commands::reqwest_api::reqwest_api::request_user_data(ally_code_val).await;
 
     let mut information: String = String::from("Character Not Found");
 
     for unit in data.units {
         if unit.data.base_id == character_val.as_str() {
             // Get vec of abilities
-            let mut abilities: Vec<schema::Ability> = vec![];
+            let mut abilities: Vec<reqwest_api::user_schema::Ability> = vec![];
             for ability in unit.data.ability_data {
                 let temp: String;
 
@@ -100,7 +86,7 @@ pub async fn get_user_data(command_interaction: &mut ApplicationCommandInteracti
                     type_of_skill = String::from("UNKNOWN ");
                 }
 
-                abilities.push(schema::Ability {
+                abilities.push(reqwest_api::user_schema::Ability {
                     name: format!("`{:9}{:40}`", type_of_skill, ability.name),
                     level: ability.ability_tier,
                     progress: temp,
